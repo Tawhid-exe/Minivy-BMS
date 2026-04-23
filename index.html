@@ -1443,8 +1443,8 @@ function renderCustomers(selected=null){
         <div class="ltv-value">${fmt(c.revenue)}</div>
       </div>
       <div class="cust-stats">
-        <div><div class="cust-stat-label">Profit</div><div class="cust-stat-val" style="color:${c.profit>=0?'var(--green)':\'var(--red)'}">${fmt(c.profit)}</div></div>
-        <div style="text-align:right"><div class="cust-stat-label">Margin</div><div class="cust-stat-val" style="color:${c.profit>=0?'var(--text2)':\'var(--red)'}">${pct(c.profit,c.revenue)}</div></div>
+        <div><div class="cust-stat-label">Profit</div><div class="cust-stat-val" style="color:${c.profit>=0?'var(--green)':'var(--red)'}">${fmt(c.profit)}</div></div>
+        <div style="text-align:right"><div class="cust-stat-label">Margin</div><div class="cust-stat-val" style="color:${c.profit>=0?'var(--text2)':'var(--red)'}">${pct(c.profit,c.revenue)}</div></div>
       </div>
     </div>`).join('')}</div>`;
 }
