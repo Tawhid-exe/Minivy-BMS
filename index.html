@@ -318,7 +318,7 @@ tr:hover .row-actions{opacity:1}
   <aside class="sidebar">
     <div class="sidebar-header">
       <div class="sidebar-brand">
-        <div class="brand-mark">✦</div>
+        <div class="brand-mark" style="overflow:hidden;padding:0;background:none;border:1px solid rgba(201,168,83,.3)"><img src="https://raw.githubusercontent.com/Tawhid-exe/Miniy-WithAntiGravity/main/Meterials/WhatsApp%20Image%202026-01-13%20at%209.54.39%20PM.jpeg" style="width:100%;height:100%;object-fit:cover;border-radius:9px;display:block" onerror="this.style.display='none';this.parentElement.innerHTML='✦';this.parentElement.style.cssText+=';display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;color:var(--gold);font-size:14px'"></div>
         <div><div class="brand-name">BMS</div><div class="brand-desc">Products Manager</div></div>
       </div>
     </div>
@@ -349,9 +349,23 @@ tr:hover .row-actions{opacity:1}
         <div class="conn-info"><div class="conn-label">Database</div><div class="conn-val" id="conn-sheet-label">Google Sheets</div></div>
       </div>
       <div style="display:flex;gap:6px;margin-bottom:6px">
-        <button class="sidebar-action" style="flex:1" onclick="exportCSV()">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Export CSV
-        </button>
+      <div style="position:relative;display:flex;flex:1">
+          <button class="sidebar-action" style="flex:1;border-radius:8px 0 0 8px;border-right:none" onclick="toggleExportMenu()">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Export
+          </button>
+          <button class="sidebar-action" style="padding:7px 8px;border-radius:0 8px 8px 0" onclick="toggleExportMenu()">▾</button>
+          <div id="export-menu" style="display:none;position:absolute;bottom:calc(100% + 4px);left:0;right:0;background:var(--card2);border:1px solid var(--border2);border-radius:10px;overflow:hidden;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,.5)">
+            <button onclick="exportCSV();closeExportMenu()" style="width:100%;padding:10px 14px;background:transparent;color:var(--text2);font-size:12px;text-align:left;display:flex;align-items:center;gap:8px;transition:.15s;border:none;cursor:pointer" onmouseover="this.style.background='rgba(255,255,255,.05)'" onmouseout="this.style.background='transparent'">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <div><div style="color:var(--text);font-weight:600">Export CSV</div><div style="font-size:10px;margin-top:1px">Opens in Excel / Google Sheets</div></div>
+            </button>
+            <div style="height:1px;background:var(--border)"></div>
+            <button onclick="exportPDF();closeExportMenu()" style="width:100%;padding:10px 14px;background:transparent;color:var(--text2);font-size:12px;text-align:left;display:flex;align-items:center;gap:8px;transition:.15s;border:none;cursor:pointer" onmouseover="this.style.background='rgba(255,255,255,.05)'" onmouseout="this.style.background='transparent'">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6M9 13h4"/></svg>
+              <div><div style="color:var(--text);font-weight:600">Export PDF Report</div><div style="font-size:10px;margin-top:1px">Printable business report</div></div>
+            </button>
+          </div>
+        </div>
         <button class="sidebar-action" onclick="refreshData()" title="Refresh">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
         </button>
@@ -386,6 +400,10 @@ tr:hover .row-actions{opacity:1}
             <option value="6m">Last 6 Months</option>
             <option value="1y">Last 1 Year</option>
             <option value="3y">Last 3 Years</option>
+          </select>
+          <span class="time-filter-label" style="margin-left:8px">Category:</span>
+          <select class="time-filter-select" id="dash-cat-filter" onchange="renderDashboard()">
+            <option value="">All Categories</option>
           </select>
           <span id="dash-period-label" style="color:var(--text3);font-size:11px"></span>
         </div>
@@ -489,11 +507,15 @@ tr:hover .row-actions{opacity:1}
         <div class="table-card" style="margin-bottom:20px">
           <div style="padding:16px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
             <div style="font-family:'Cinzel',serif;font-size:13px;color:var(--text2);letter-spacing:.5px;text-transform:uppercase">Purchase Shipments</div>
+            <button onclick="openCatManager()" style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:11px;cursor:pointer;transition:.2s" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M4.93 19.07l1.41-1.41M19.07 19.07l-1.41-1.41M12 2v2M12 20v2M2 12h2M20 12h2"/></svg>
+              Manage Categories
+            </button>
           </div>
           <div class="table-scroll">
             <table><thead><tr>
               <th class="no-sort" style="width:36px">#</th>
-              <th class="no-sort">Item</th><th class="no-sort">Category</th><th class="no-sort">Qty</th>
+              <th class="no-sort">Item</th><th class="no-sort">Type</th><th class="no-sort">Category</th><th class="no-sort">Qty</th>
               <th class="no-sort">Total Cost</th><th class="no-sort">Cost / Unit</th>
               <th class="no-sort">Date</th><th class="no-sort">Notes</th><th class="no-sort"></th>
             </tr></thead><tbody id="costs-table-body"></tbody></table>
@@ -553,9 +575,16 @@ tr:hover .row-actions{opacity:1}
     </div>
     <div class="modal-grid">
       <div class="modal-full"><label class="field-label">Item Name *</label><input class="field-input" id="cf-item" placeholder="e.g. 10x Fish Claw"></div>
+      <div><label class="field-label">Entry Type</label>
+        <select class="field-input" id="cf-type" style="cursor:pointer" onchange="updateCostPreview()">
+          <option value="purchase">Purchase (Stock In)</option>
+          <option value="refund">Refund (Returned to Supplier)</option>
+          <option value="missing">Missing / Lost Stock</option>
+        </select>
+      </div>
       <div><label class="field-label">Category</label><select class="field-input" id="cf-cat" style="cursor:pointer"></select></div>
       <div><label class="field-label">Quantity</label><input class="field-input" id="cf-qty" type="number" min="1" value="1" oninput="updateCostPreview()"></div>
-      <div><label class="field-label">Total Cost (৳) *</label><input class="field-input" id="cf-total" type="number" min="0" placeholder="0" oninput="updateCostPreview()"></div>
+      <div><label class="field-label">Total Cost (৳) <span id="cf-cost-label" style="color:var(--text3);font-size:9px">(0 for missing)</span></label><input class="field-input" id="cf-total" type="number" min="0" placeholder="0" oninput="updateCostPreview()"></div>
       <div><label class="field-label">Date</label><input class="field-input" id="cf-date" type="date"></div>
       <div class="modal-full"><label class="field-label">Notes</label><input class="field-input" id="cf-notes" placeholder="Batch number, supplier, etc."></div>
     </div>
@@ -585,14 +614,42 @@ tr:hover .row-actions{opacity:1}
   </div>
 </div>
 
+<!-- Category Manager Modal -->
+<div class="modal-overlay" id="m-cats">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <div class="modal-title">Manage Categories</div>
+      <button class="modal-close" onclick="closeModal('m-cats')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.6">These categories appear in Sales & Shipment forms. Historical data keeps its original category even if you remove it here.</div>
+    <div id="cat-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:20px"></div>
+    <div style="display:flex;gap:8px">
+      <input id="new-cat-input" class="field-input" placeholder="New category name…" style="flex:1" onkeydown="if(event.key==='Enter')addCat()">
+      <button onclick="addCat()" class="btn-save" style="white-space:nowrap;padding:9px 16px">+ Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- Inventory Detail Modal -->
+<div class="modal-overlay" id="m-inv-detail">
+  <div class="modal" style="max-width:580px">
+    <div class="modal-header">
+      <div class="modal-title" id="inv-detail-title">Batch Detail</div>
+      <button class="modal-close" onclick="closeModal('m-inv-detail')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div id="inv-detail-body"></div>
+  </div>
+</div>
+
 <script>
 // ══════════════════════════════════════════════════════════
 // CONSTANTS
 // ══════════════════════════════════════════════════════════
-const CATS = ['Rings','Claw','Fish Claw','Goth Claw','Mini Claw','Bangle','Mirror','Hairpin','Pin','Gift','Other'];
-const CAT_COLORS = {Rings:'#c9a853',Claw:'#a78bfa',  'Fish Claw':'#2dd4bf','Goth Claw':'#f472b6','Mini Claw':'#818cf8',Bangle:'#4ade80',Mirror:'#60a5fa',Hairpin:'#fb923c',Pin:'#facc15',Gift:'#f87171',Other:'#6b7280'};
+const DEFAULT_CATS = ['Rings','Claw','Bangle','Mirror','Hairpin','Gift','Other'];
+const CAT_COLORS = {Rings:'#c9a853',Claw:'#a78bfa','Fish Claw':'#2dd4bf','Goth Claw':'#f472b6','Mini Claw':'#818cf8',Bangle:'#4ade80',Mirror:'#60a5fa',Hairpin:'#fb923c',Pin:'#facc15',Gift:'#f87171',Other:'#6b7280'};
+let CATS = JSON.parse(localStorage.getItem('bms_cats') || JSON.stringify(DEFAULT_CATS));
 const SALE_HEADERS  = ['id','item','cat','customer','qty','rev','cost','date','pay','due','ord','disc','notes'];
-const COST_HEADERS  = ['id','item','cat','qty','totalCost','date','notes'];
+const COST_HEADERS  = ['id','item','cat','qty','totalCost','date','notes','type'];
 const SALES_TAB = 'Sales';
 const COSTS_TAB = 'Costs';
 const BASE = 'https://sheets.googleapis.com/v4/spreadsheets';
@@ -667,15 +724,15 @@ const SAMPLE_SALES = [
 ].map(s=>({...s,id:uid()}));
 
 const SAMPLE_COSTS = [
-  {item:"Mirror (5 pcs)",cat:"Mirror",qty:5,totalCost:2290,date:"2025-12-15",notes:"Batch 1"},
-  {item:"Rings (28 pcs)",cat:"Rings",qty:28,totalCost:1020,date:"2025-12-15",notes:"Batch 1"},
-  {item:"Claws (12 pcs)",cat:"Claw",qty:12,totalCost:1240,date:"2025-12-15",notes:"Batch 1"},
-  {item:"Rings (40 pcs)",cat:"Rings",qty:40,totalCost:962,date:"2025-12-20",notes:"Batch 2"},
-  {item:"Bangles (10 pcs)",cat:"Bangle",qty:10,totalCost:1286,date:"2026-01-01",notes:"Batch 1"},
-  {item:"Fish Claw (10 pcs)",cat:"Fish Claw",qty:10,totalCost:1171,date:"2026-01-15",notes:"Batch 1"},
-  {item:"Fish Claw (8 pcs)",cat:"Fish Claw",qty:8,totalCost:1189,date:"2026-02-15",notes:"Batch 2"},
-  {item:"Hairpin (15 pcs)",cat:"Hairpin",qty:15,totalCost:1012,date:"2026-02-15",notes:"Batch 1"},
-  {item:"Market Stall Fee",cat:"Other",qty:1,totalCost:250,date:"2026-01-01",notes:"Setup cost"},
+  {item:"Mirror (5 pcs)",cat:"Mirror",qty:5,totalCost:2290,date:"2025-12-15",notes:"Batch 1",type:"purchase"},
+  {item:"Rings (28 pcs)",cat:"Rings",qty:28,totalCost:1020,date:"2025-12-15",notes:"Batch 1",type:"purchase"},
+  {item:"Claws (12 pcs)",cat:"Claw",qty:12,totalCost:1240,date:"2025-12-15",notes:"Batch 1",type:"purchase"},
+  {item:"Rings (40 pcs)",cat:"Rings",qty:40,totalCost:962,date:"2025-12-20",notes:"Batch 2",type:"purchase"},
+  {item:"Bangles (10 pcs)",cat:"Bangle",qty:10,totalCost:1286,date:"2026-01-01",notes:"Batch 1",type:"purchase"},
+  {item:"Fish Claw (10 pcs)",cat:"Fish Claw",qty:10,totalCost:1171,date:"2026-01-15",notes:"Batch 1",type:"purchase"},
+  {item:"Fish Claw (8 pcs)",cat:"Fish Claw",qty:8,totalCost:1189,date:"2026-02-15",notes:"Batch 2",type:"purchase"},
+  {item:"Hairpin (15 pcs)",cat:"Hairpin",qty:15,totalCost:1012,date:"2026-02-15",notes:"Batch 1",type:"purchase"},
+  {item:"Market Stall Fee",cat:"Other",qty:1,totalCost:250,date:"2026-01-01",notes:"Setup cost",type:"purchase"},
 ].map(c=>({...c,id:uid()}));
 
 // ══════════════════════════════════════════════════════════
@@ -717,6 +774,12 @@ function populateCatSelects(){
   const fCat = $('f-cat'); if(fCat) fCat.innerHTML = fOpts;
   const sfCat = $('f-catf'); if(sfCat) sfCat.innerHTML = opts;
   const cfCat = $('cf-cat'); if(cfCat) cfCat.innerHTML = opts;
+  // Dashboard category filter — include ALL cats ever seen in data too
+  const dashCat = $('dash-cat-filter');
+  if(dashCat){
+    const allCats = [...new Set([...CATS,...sales.map(s=>s.cat),...costsData.map(c=>c.cat)])].filter(Boolean);
+    dashCat.innerHTML = `<option value="">All Categories</option>` + allCats.map(c=>`<option value="${c}">${c}</option>`).join('');
+  }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -772,7 +835,7 @@ async function ensureSheets(){
   // Ensure Costs tab
   const cd=await sheetsReq(`/values/${COSTS_TAB}!A1:A1`).catch(()=>null);
   if(!cd||!cd.values||cd.values[0]?.[0]!=='id'){
-    await sheetsReq(`/values/${COSTS_TAB}!A1:G1?valueInputOption=RAW`,'PUT',{range:`${COSTS_TAB}!A1:G1`,values:[COST_HEADERS]});
+    await sheetsReq(`/values/${COSTS_TAB}!A1:H1?valueInputOption=RAW`,'PUT',{range:`${COSTS_TAB}!A1:H1`,values:[COST_HEADERS]});
   }
 }
 
@@ -787,7 +850,7 @@ async function fetchCosts(){
   const d=await sheetsReq(`/values/${COSTS_TAB}`).catch(()=>({values:[]}));
   const rows=d.values||[];
   if(rows.length<=1){costsData=SAMPLE_COSTS;await bulkWriteCosts();return;}
-  costsData=rows.slice(1).map((r,i)=>({_row:i+2,id:r[0]||uid(),item:r[1]||'',cat:r[2]||'Other',qty:+r[3]||1,totalCost:+r[4]||0,date:r[5]||'',notes:r[6]||''}));
+  costsData=rows.slice(1).map((r,i)=>({_row:i+2,id:r[0]||uid(),item:r[1]||'',cat:r[2]||'Other',qty:+r[3]||1,totalCost:+r[4]||0,date:r[5]||'',notes:r[6]||'',type:r[7]||'purchase'}));
 }
 
 async function refreshData(){showSync(true);try{await Promise.all([fetchSales(),fetchCosts()]);renderCurrentPage();toast('Refreshed','success');}catch(e){toast('Refresh failed: '+e.message,'error');}showSync(false);}
@@ -799,7 +862,7 @@ async function bulkWriteSales(){
 }
 async function bulkWriteCosts(){
   const rows=costsData.map(c=>COST_HEADERS.map(h=>c[h]??''));
-  await sheetsReq(`/values/${COSTS_TAB}!A2:G${rows.length+1}?valueInputOption=RAW`,'PUT',{range:`${COSTS_TAB}!A2:G${rows.length+1}`,values:rows});
+  await sheetsReq(`/values/${COSTS_TAB}!A2:H${rows.length+1}?valueInputOption=RAW`,'PUT',{range:`${COSTS_TAB}!A2:H${rows.length+1}`,values:rows});
   await fetchCosts();
 }
 
@@ -853,14 +916,17 @@ function renderCurrentPage(){
 // DASHBOARD
 // ══════════════════════════════════════════════════════════
 function renderDashboard(){
-  const filtered=filterByTime(sales);
+  const catFilter=$('dash-cat-filter')?.value||'';
+  let baseSales=catFilter?sales.filter(s=>s.cat===catFilter):sales;
+  const filtered=filterByTime(baseSales);
   const totalRev   =filtered.reduce((a,s)=>a+(+s.rev||0),0);
   const totalProfit=filtered.reduce((a,s)=>a+profit(s),0);
   const totalCost  =filtered.reduce((a,s)=>a+(+s.cost||0),0);
   const totalDue   =filtered.reduce((a,s)=>a+(+s.due||0),0);
   const period=$('time-filter')?.value||'all';
   const pLabel={'all':'All Time','30d':'Last 30 Days','3m':'Last 3 Months','6m':'Last 6 Months','1y':'Last Year','3y':'Last 3 Years'}[period];
-  $('dash-period-label').textContent=`Showing: ${pLabel} · ${filtered.length} sales`;
+  const catLabel=catFilter?` · ${catFilter}`:'';
+  $('dash-period-label').textContent=`Showing: ${pLabel}${catLabel} · ${filtered.length} sales`;
 
   animNum('kpi-rev',totalRev);animNum('kpi-profit',totalProfit);animNum('kpi-cost',totalCost);animNum('kpi-due',totalDue);
   $('kpi-rev-sub').textContent=`${filtered.length} sales`;
@@ -1038,14 +1104,27 @@ async function saveSale(){
 // ══════════════════════════════════════════════════════════
 function openAddCost(){editCostId=null;$('cost-modal-title').textContent='Add Shipment';$('btn-save-cost').textContent='Save Shipment';setCostForm({});openModal('m-cost');}
 function openEditCost(id){const c=costsData.find(x=>x.id===id);if(!c)return;editCostId=id;$('cost-modal-title').textContent='Edit Shipment';setCostForm(c);openModal('m-cost');}
-function setCostForm(c){$('cf-item').value=c.item||'';$('cf-cat').value=c.cat||'Other';$('cf-qty').value=c.qty||1;$('cf-total').value=c.totalCost||'';$('cf-date').value=c.date||today();$('cf-notes').value=c.notes||'';updateCostPreview();}
+function setCostForm(c){$('cf-item').value=c.item||'';$('cf-cat').value=c.cat||CATS[0]||'Rings';$('cf-qty').value=c.qty||1;$('cf-total').value=c.totalCost||'';$('cf-date').value=c.date||today();$('cf-notes').value=c.notes||'';$('cf-type').value=c.type||'purchase';updateCostPreview();}
 function updateCostPreview(){
+  const type=$('cf-type')?.value||'purchase';
   const qty=+$('cf-qty').value||0,tot=+$('cf-total').value||0;
-  const pr=$('cost-preview');if(qty&&tot){pr.style.display='flex';$('cost-preview-val').textContent=fmt(Math.round(tot/qty))+' per unit';}else pr.style.display='none';
+  const pr=$('cost-preview');const lbl=$('cf-cost-label');
+  if(lbl){
+    if(type==='missing'){lbl.textContent='(cost = 0, write-off)';lbl.style.color='var(--amber)';}
+    else if(type==='refund'){lbl.textContent='(money recovered)';lbl.style.color='var(--green)';}
+    else{lbl.textContent='(leave 0 if unknown)';lbl.style.color='var(--text3)';}
+  }
+  if(qty&&(tot||type==='missing')){
+    pr.style.display='flex';
+    if(type==='missing'){$('cost-preview-val').textContent=`${qty} units written off (loss)`;$('cost-preview-val').style.color='var(--amber)';}
+    else if(type==='refund'){$('cost-preview-val').textContent=`${qty} units returned · ${fmt(tot)} recovered`;$('cost-preview-val').style.color='var(--green)';}
+    else{$('cost-preview-val').textContent=fmt(Math.round(tot/qty))+' per unit';$('cost-preview-val').style.color='var(--blue)';}
+  }else pr.style.display='none';
 }
 async function saveCost(){
   const item=$('cf-item').value.trim();if(!item){toast('Item name required','error');return;}
-  const entry={id:editCostId||uid(),item,cat:$('cf-cat').value,qty:+$('cf-qty').value||1,totalCost:+$('cf-total').value||0,date:$('cf-date').value,notes:$('cf-notes').value.trim()};
+  const type=$('cf-type').value||'purchase';
+  const entry={id:editCostId||uid(),item,cat:$('cf-cat').value,qty:+$('cf-qty').value||1,totalCost:type==='missing'?0:(+$('cf-total').value||0),date:$('cf-date').value,notes:$('cf-notes').value.trim(),type};
   const btn=$('btn-save-cost');btn.disabled=true;showSync(true);closeModal('m-cost');
   try{
     if(editCostId){const ex=costsData.find(c=>c.id===editCostId);entry._row=ex._row;await updateRow(COSTS_TAB,entry._row,COST_HEADERS,entry);const i=costsData.findIndex(c=>c.id===editCostId);costsData[i]=entry;toast('Shipment updated','success');}
@@ -1145,29 +1224,141 @@ function renderCustomers(selected=null){
 }
 
 // ══════════════════════════════════════════════════════════
+// FIFO BATCH CALCULATOR
+// ══════════════════════════════════════════════════════════
+function getFIFOBatches(cat){
+  const purchases=costsData.filter(c=>c.cat===cat&&(c.type||'purchase')==='purchase').sort((a,b)=>a.date.localeCompare(b.date));
+  const refunds=costsData.filter(c=>c.cat===cat&&c.type==='refund');
+  const missing=costsData.filter(c=>c.cat===cat&&c.type==='missing');
+  const soldQty=sales.filter(s=>s.cat===cat).reduce((a,s)=>a+(+s.qty||0),0);
+  const refundedQty=refunds.reduce((a,c)=>a+(+c.qty||0),0);
+  const missingQty=missing.reduce((a,c)=>a+(+c.qty||0),0);
+  let toDeduct=soldQty+refundedQty+missingQty;
+  const batches=purchases.map(b=>{
+    const qty=+b.qty||0;const used=Math.min(toDeduct,qty);
+    toDeduct=Math.max(0,toDeduct-qty);
+    return{...b,originalQty:qty,usedQty:used,remainingQty:qty-used,costPerUnit:qty?Math.round(+b.totalCost/qty):0};
+  });
+  return{batches,refunds,missing,soldQty,refundedQty,missingQty,
+    totalBought:purchases.reduce((a,b)=>a+(+b.qty||0),0),
+    totalRemaining:batches.reduce((a,b)=>a+b.remainingQty,0)};
+}
+
+function openInvDetail(cat){
+  const col=CAT_COLORS[cat]||'#888';
+  const {batches,refunds,missing,soldQty,refundedQty,missingQty,totalBought,totalRemaining}=getFIFOBatches(cat);
+  $('inv-detail-title').innerHTML=`<span style="color:${col}">●</span> ${escH(cat)} — Batch Breakdown`;
+  const rows=batches.map((b,i)=>{
+    const pct=b.originalQty?Math.round(b.usedQty/b.originalQty*100):0;
+    const rem=b.remainingQty;const remCol=rem<=0?'var(--red)':rem<=2?'var(--amber)':'var(--green)';
+    return`<tr style="animation:fadeUp .1s ${i*.04}s both">
+      <td class="sl-cell">${i+1}</td>
+      <td style="font-weight:500;font-size:12px">${escH(b.item)}</td>
+      <td class="num-cell" style="color:var(--text2);font-size:11px">${b.date}</td>
+      <td class="num-cell" style="text-align:center;color:var(--text2)">${b.originalQty}</td>
+      <td class="num-cell" style="text-align:center;color:var(--text3)">${b.usedQty}</td>
+      <td class="num-cell" style="text-align:center;color:${remCol};font-weight:700">${rem}</td>
+      <td class="num-cell" style="color:var(--blue)">${fmt(b.costPerUnit)}</td>
+      <td style="font-size:11px;color:var(--text3)">${escH(b.notes)||'—'}</td>
+    </tr>`;
+  }).join('');
+  const adjRows=[...refunds.map(r=>`<tr><td colspan="8" style="padding:8px 12px;font-size:12px">
+    <span style="background:var(--green-dim);color:var(--green);border:1px solid rgba(74,222,128,.2);border-radius:5px;padding:2px 8px;font-weight:600;font-size:11px">REFUND</span>
+    <span style="margin-left:10px;color:var(--text2)">${escH(r.item)} · ${r.qty} units · ${r.date} · ${fmt(r.totalCost)} recovered</span></td></tr>`),...missing.map(m=>`<tr><td colspan="8" style="padding:8px 12px;font-size:12px">
+    <span style="background:var(--amber-dim);color:var(--amber);border:1px solid rgba(251,191,36,.2);border-radius:5px;padding:2px 8px;font-weight:600;font-size:11px">MISSING</span>
+    <span style="margin-left:10px;color:var(--text2)">${escH(m.item)} · ${m.qty} units written off · ${m.date}</span></td></tr>`)].join('');
+  $('inv-detail-body').innerHTML=`
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px">
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center">
+        <div style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:4px">Bought</div>
+        <div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:500;color:var(--text)">${totalBought}</div>
+      </div>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center">
+        <div style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:4px">Sold</div>
+        <div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:500;color:var(--gold)">${soldQty}</div>
+      </div>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center">
+        <div style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:4px">Adjustments</div>
+        <div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:500;color:var(--amber)">${refundedQty+missingQty}</div>
+      </div>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center">
+        <div style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:4px">Remaining</div>
+        <div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:500;color:${totalRemaining<=0?'var(--red)':totalRemaining<=2?'var(--amber)':'var(--green)'}">${totalRemaining}</div>
+      </div>
+    </div>
+    <div style="font-size:10px;color:var(--text3);margin-bottom:8px;letter-spacing:.5px">FIFO ORDER — Oldest stock depletes first. Cost per unit is per batch.</div>
+    <div class="table-scroll"><table>
+      <thead><tr>
+        <th class="no-sort" style="width:28px">#</th>
+        <th class="no-sort">Item / Batch</th><th class="no-sort">Date</th>
+        <th class="no-sort">Bought</th><th class="no-sort">Used</th><th class="no-sort">Left</th>
+        <th class="no-sort">Cost/Unit</th><th class="no-sort">Notes</th>
+      </tr></thead>
+      <tbody>${rows}${adjRows}</tbody>
+    </table></div>`;
+  openModal('m-inv-detail');
+}
+
+// ══════════════════════════════════════════════════════════
+// CATEGORY MANAGER
+// ══════════════════════════════════════════════════════════
+function openCatManager(){renderCatManagerList();openModal('m-cats');}
+function renderCatManagerList(){
+  $('cat-list').innerHTML=CATS.map(c=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:9px">
+      <span style="width:8px;height:8px;border-radius:50%;background:${CAT_COLORS[c]||'var(--text3)'};flex-shrink:0;box-shadow:0 0 6px ${CAT_COLORS[c]||'transparent'}"></span>
+      <span style="flex:1;font-size:13px">${escH(c)}</span>
+      ${c==='Other'?'<span style="font-size:10px;color:var(--text3)">required</span>':`<button onclick="removeCat('${c}')" style="padding:3px 8px;border-radius:6px;background:var(--red-dim);border:1px solid rgba(248,113,113,.2);color:var(--red);font-size:11px;cursor:pointer">Remove</button>`}
+    </div>`).join('');
+}
+function removeCat(cat){
+  if(cat==='Other') return;
+  CATS=CATS.filter(c=>c!==cat);
+  localStorage.setItem('bms_cats',JSON.stringify(CATS));
+  populateCatSelects();renderCatManagerList();toast(`Removed "${cat}" from new entries`,'info');
+}
+function addCat(){
+  const name=$('new-cat-input').value.trim();
+  if(!name){toast('Enter a category name','error');return;}
+  if(CATS.includes(name)){toast('Already exists','error');return;}
+  CATS.push(name);
+  localStorage.setItem('bms_cats',JSON.stringify(CATS));
+  populateCatSelects();renderCatManagerList();
+  $('new-cat-input').value='';toast(`Added "${name}"` ,'success');
+}
+
+// ══════════════════════════════════════════════════════════
 // COSTS PAGE
 // ══════════════════════════════════════════════════════════
 function renderCosts(){
-  const totalInvested=costsData.reduce((a,c)=>a+(+c.totalCost||0),0);
+  const purchases=costsData.filter(c=>(c.type||'purchase')==='purchase');
+  const refundsAll=costsData.filter(c=>c.type==='refund');
+  const missingAll=costsData.filter(c=>c.type==='missing');
+  const totalInvested=purchases.reduce((a,c)=>a+(+c.totalCost||0),0)-refundsAll.reduce((a,c)=>a+(+c.totalCost||0),0);
   const totalRev=sales.reduce((a,s)=>a+(+s.rev||0),0);
   const pnl=totalRev-totalInvested;
 
   $('cost-kpi-total').textContent=fmt(totalInvested);
-  $('cost-kpi-sub').textContent=`${costsData.length} shipments`;
+  $('cost-kpi-sub').textContent=`${purchases.length} purchase batches`;
   $('cost-kpi-rev').textContent=fmt(totalRev);
   $('cost-kpi-pnl').textContent=fmt(pnl);
   $('cost-kpi-pnl').style.color=pnl>=0?'var(--green)':'var(--red)';
 
-  // Shipments table
+  const typeBadge={purchase:'<span style="background:var(--blue-dim);color:var(--blue);border:1px solid rgba(96,165,250,.2);border-radius:5px;padding:2px 8px;font-size:10px;font-weight:600">Purchase</span>',refund:'<span style="background:var(--green-dim);color:var(--green);border:1px solid rgba(74,222,128,.2);border-radius:5px;padding:2px 8px;font-size:10px;font-weight:600">Refund</span>',missing:'<span style="background:var(--amber-dim);color:var(--amber);border:1px solid rgba(251,191,36,.2);border-radius:5px;padding:2px 8px;font-size:10px;font-weight:600">Missing</span>'};
+
   $('costs-table-body').innerHTML=costsData.length?costsData.map((c,i)=>{
-    const cpu=c.qty?Math.round(c.totalCost/c.qty):0;
+    const t=c.type||'purchase';
+    const cpu=t==='missing'?0:(c.qty?Math.round(c.totalCost/c.qty):0);
+    const qtyDisplay=t!=='purchase'?`<span style="color:var(--amber)">-${c.qty}</span>`:c.qty;
+    const costDisplay=t==='missing'?'<span style="color:var(--amber)">write-off</span>':`<span class="num-cell ${t==='refund'?'num-green':'num-red'}">${t==='refund'?'+':'-'}${fmt(c.totalCost).slice(1)}</span>`;
     return `<tr style="animation:fadeUp .12s ${i*.025}s both">
       <td class="sl-cell">${i+1}</td>
       <td style="font-weight:500">${escH(c.item)}</td>
+      <td>${typeBadge[t]||''}</td>
       <td><span class="cell-cat" style="color:${CAT_COLORS[c.cat]||'var(--text2)'}">${escH(c.cat)}</span></td>
-      <td class="num-cell" style="color:var(--text2);text-align:center">${c.qty}</td>
-      <td class="num-cell num-red">${fmt(c.totalCost)}</td>
-      <td class="num-cell" style="color:var(--blue)">${fmt(cpu)}</td>
+      <td class="num-cell" style="color:var(--text2);text-align:center">${qtyDisplay}</td>
+      <td>${costDisplay}</td>
+      <td class="num-cell" style="color:var(--blue)">${cpu?fmt(cpu):'—'}</td>
       <td class="num-cell" style="color:var(--text2);font-size:12px">${c.date}</td>
       <td style="color:var(--text2);font-size:12px">${escH(c.notes)||'—'}</td>
       <td><div class="row-actions">
@@ -1175,23 +1366,19 @@ function renderCosts(){
         <button class="row-btn row-btn-del" onclick="confirmDel('${c.id}',${c._row||0},'cost')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg></button>
       </div></td>
     </tr>`;
-  }).join(''):`<tr class="empty-row"><td colspan="9"><div class="empty-icon">◇</div><div class="empty-text">No shipments yet</div><div class="empty-sub">Add your first purchase</div></td></tr>`;
+  }).join(''):`<tr class="empty-row"><td colspan="10"><div class="empty-icon">◇</div><div class="empty-text">No shipments yet</div><div class="empty-sub">Add your first purchase</div></td></tr>`;
 
-  // Inventory tracker
-  const invMap={};
-  costsData.forEach(c=>{const k=c.cat;if(!invMap[k])invMap[k]={bought:0,cost:0};invMap[k].bought+=+c.qty||0;invMap[k].cost+=+c.totalCost||0;});
-  const soldMap={};
-  sales.forEach(s=>{const k=s.cat;if(!soldMap[k])soldMap[k]=0;soldMap[k]+=+s.qty||0;});
-
-  const invCats=Object.keys(invMap);
+  // Inventory tracker — EXCLUDE 'Other', use FIFO data
+  const invCats=[...new Set(costsData.filter(c=>(c.type||'purchase')==='purchase').map(c=>c.cat))].filter(c=>c!=='Other');
   $('inv-tracker').innerHTML=invCats.map(cat=>{
-    const bought=invMap[cat].bought;const sold=soldMap[cat]||0;const rem=bought-sold;const pct=bought?Math.max(0,Math.min(100,Math.round(rem/bought*100))):0;
-    const col=CAT_COLORS[cat]||'#888';const remCol=rem<=0?'var(--red)':rem<=2?'var(--amber)':'var(--green)';
-    return `<div class="inv-card">
-      <div class="inv-cat-label" style="color:${col}">${cat}</div>
-      <div class="inv-remaining" style="color:${remCol}">${rem} left</div>
-      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3)"><span>Bought: ${bought}</span><span>Sold: ${sold}</span></div>
-      <div class="inv-bar-bg"><div class="inv-bar-fill" style="width:${pct}%;background:${col}"></div></div>
+    const {totalBought,totalRemaining,soldQty}=getFIFOBatches(cat);
+    const pctVal=totalBought?Math.max(0,Math.min(100,Math.round(totalRemaining/totalBought*100))):0;
+    const col=CAT_COLORS[cat]||'#888';const remCol=totalRemaining<=0?'var(--red)':totalRemaining<=2?'var(--amber)':'var(--green)';
+    return `<div class="inv-card" style="cursor:pointer;transition:.2s" onclick="openInvDetail('${cat}')" onmouseover="this.style.borderColor='${col}'" onmouseout="this.style.borderColor='var(--border)'">
+      <div class="inv-cat-label" style="color:${col}">${cat} <span style="float:right;font-size:9px;color:var(--text3);letter-spacing:.5px;font-weight:400">Click for batches ↗</span></div>
+      <div class="inv-remaining" style="color:${remCol}">${totalRemaining} left</div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3)"><span>Bought: ${totalBought}</span><span>Sold: ${soldQty}</span></div>
+      <div class="inv-bar-bg"><div class="inv-bar-fill" style="width:${pctVal}%;background:${col}"></div></div>
     </div>`;
   }).join('')||'<div style="color:var(--text3);font-size:12px;padding:20px">No inventory data yet.</div>';
 }
@@ -1199,13 +1386,70 @@ function renderCosts(){
 // ══════════════════════════════════════════════════════════
 // EXPORT
 // ══════════════════════════════════════════════════════════
+function toggleExportMenu(){const m=$('export-menu');m.style.display=m.style.display==='none'?'block':'none';}
+function closeExportMenu(){$('export-menu').style.display='none';}
+document.addEventListener('click',e=>{if(!e.target.closest('#export-menu')&&!e.target.closest('[onclick*="toggleExportMenu"]'))closeExportMenu();});
+
 function exportCSV(){
   const h=['Item','Category','Customer','Qty','Revenue','Cost','Profit','Discount','Due','Date','Payment','Order','Notes'];
   const rows=sales.map(s=>[s.item,s.cat,s.customer,s.qty,s.rev,s.cost,profit(s),s.disc,s.due,s.date,s.pay,s.ord,s.notes]);
   const csv=[h,...rows].map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
-  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([csv],{type:'text/csv'})),download:'bms-sales.csv'});a.click();toast('CSV exported','success');
+  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([csv],{type:'text/csv'})),download:'bms-sales.csv'});a.click();toast('CSV exported — open in Excel or Google Sheets','success');
 }
-/* ── Dummy testing commit ── */
+
+function exportPDF(){
+  const totalRev=sales.reduce((a,s)=>a+(+s.rev||0),0);
+  const totalProfit=sales.reduce((a,s)=>a+profit(s),0);
+  const totalDue=sales.reduce((a,s)=>a+(+s.due||0),0);
+  const totalInvested=costsData.filter(c=>(c.type||'purchase')==='purchase').reduce((a,c)=>a+(+c.totalCost||0),0);
+  const fmtN=n=>'৳'+Number(n||0).toLocaleString('en-IN');
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><title>BMS Report</title><style>
+    *{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',sans-serif;color:#1a1a2e;background:#fff;padding:32px;font-size:13px}
+    h1{font-size:22px;color:#c9a853;margin-bottom:4px;font-family:Georgia,serif}
+    .sub{color:#666;font-size:11px;margin-bottom:28px}
+    .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px}
+    .kpi{border:1px solid #e0e0e0;border-radius:10px;padding:16px}
+    .kpi-l{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#888;margin-bottom:6px}
+    .kpi-v{font-size:20px;font-family:'Courier New',monospace;font-weight:700}
+    table{width:100%;border-collapse:collapse;margin-bottom:24px}
+    th{padding:8px 10px;text-align:left;background:#f5f5f0;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#666;border-bottom:2px solid #e0e0e0}
+    td{padding:7px 10px;border-bottom:1px solid #f0f0f0;font-size:12px}
+    tr:nth-child(even) td{background:#fafaf8}
+    .gold{color:#c9853a;font-weight:600}.green{color:#22863a;font-weight:600}.red{color:#d73a49;font-weight:600}
+    h2{font-size:13px;text-transform:uppercase;letter-spacing:1px;color:#888;margin:20px 0 10px;border-top:1px solid #eee;padding-top:16px}
+    @media print{body{padding:16px}button{display:none}}
+  </style></head><body>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div><h1>BMS Business Report</h1><div class="sub">Generated ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})} · ${sales.length} total sales</div></div>
+      <button onclick="window.print()" style="padding:8px 16px;background:#c9a853;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:12px">🖨 Print / Save PDF</button>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><div class="kpi-l">Total Revenue</div><div class="kpi-v gold">${fmtN(totalRev)}</div></div>
+      <div class="kpi"><div class="kpi-l">Total Profit</div><div class="kpi-v green">${fmtN(totalProfit)}</div></div>
+      <div class="kpi"><div class="kpi-l">Total Invested</div><div class="kpi-v" style="color:#3a6dc9">${fmtN(totalInvested)}</div></div>
+      <div class="kpi"><div class="kpi-l">Outstanding Due</div><div class="kpi-v red">${fmtN(totalDue)}</div></div>
+    </div>
+    <h2>Sales Records</h2>
+    <table><thead><tr><th>#</th><th>Item</th><th>Category</th><th>Customer</th><th>Date</th><th>Revenue</th><th>Cost</th><th>Profit</th><th>Payment</th><th>Due</th></tr></thead>
+    <tbody>${[...sales].sort((a,b)=>b.date.localeCompare(a.date)).map((s,i)=>`<tr>
+      <td style="color:#999">${i+1}</td><td><strong>${escH(s.item)}</strong></td><td>${escH(s.cat)}</td>
+      <td>${escH(s.customer)||'—'}</td><td style="color:#666">${s.date}</td>
+      <td class="gold">${fmtN(s.rev)}</td><td style="color:#666">${s.cost?fmtN(s.cost):'—'}</td>
+      <td class="${profit(s)>=0?'green':'red'}">${fmtN(profit(s))}</td>
+      <td>${s.pay}</td><td class="${s.due>0?'red':''}">${s.due>0?fmtN(s.due):'—'}</td>
+    </tr>`).join('')}</tbody></table>
+    <h2>Purchase Shipments</h2>
+    <table><thead><tr><th>#</th><th>Item</th><th>Type</th><th>Category</th><th>Qty</th><th>Total Cost</th><th>Cost/Unit</th><th>Date</th><th>Notes</th></tr></thead>
+    <tbody>${costsData.map((c,i)=>{const cpu=c.qty&&c.totalCost?Math.round(c.totalCost/c.qty):0;return`<tr>
+      <td style="color:#999">${i+1}</td><td><strong>${escH(c.item)}</strong></td><td>${c.type||'purchase'}</td>
+      <td>${escH(c.cat)}</td><td>${c.qty}</td><td class="red">${fmtN(c.totalCost)}</td>
+      <td>${cpu?fmtN(cpu):'—'}</td><td style="color:#666">${c.date}</td><td>${escH(c.notes)||'—'}</td>
+    </tr>`;}).join('')}</tbody></table>
+  </body></html>`);
+  w.document.close();toast('PDF report opened — use Ctrl+P to save as PDF','success');
+}
+
 // ══════════════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════════════
@@ -1223,4 +1467,3 @@ document.addEventListener('keydown',e=>{
 </script>
 </body>
 </html>
-
