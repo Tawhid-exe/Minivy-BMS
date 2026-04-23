@@ -553,16 +553,22 @@ tr:hover .row-actions{opacity:1}
     </div>
     <div class="modal-grid">
       <div class="modal-full"><label class="field-label">Item Name *</label><input class="field-input" id="f-item" placeholder="e.g. Golden Ring" oninput="updateProfitPreview()"></div>
-      <div><label class="field-label">Category</label><select class="field-input" id="f-catf" style="cursor:pointer"></select></div>
+      <div><label class="field-label">Category</label><select class="field-input" id="f-catf" style="cursor:pointer" onchange="autoFillSaleCost()"></select></div>
       <div><label class="field-label">Customer</label><input class="field-input" id="f-cust" placeholder="Customer name"></div>
-      <div><label class="field-label">Quantity</label><input class="field-input" id="f-qty" type="number" min="1" value="1"></div>
+      <div><label class="field-label">Quantity</label><input class="field-input" id="f-qty" type="number" min="1" value="1" oninput="autoFillSaleCost()"></div>
       <div><label class="field-label">Date</label><input class="field-input" id="f-date" type="date"></div>
       <div><label class="field-label">Revenue (৳) *</label><input class="field-input" id="f-rev" type="number" min="0" placeholder="0" oninput="updateProfitPreview()"></div>
-      <div><label class="field-label">Cost (৳)</label><input class="field-input" id="f-cost" type="number" min="0" placeholder="0" oninput="updateProfitPreview()"></div>
+      <div><label class="field-label">Cost (৳) <span id="f-cost-hint" style="font-size:9px;color:var(--teal);letter-spacing:.5px"></span></label><input class="field-input" id="f-cost" type="number" min="0" placeholder="0" oninput="updateProfitPreview()"></div>
       <div><label class="field-label">Amount Due (৳)</label><input class="field-input" id="f-due" type="number" min="0" placeholder="0"></div>
       <div><label class="field-label">Discount (৳)</label><input class="field-input" id="f-disc" type="number" min="0" placeholder="0"></div>
       <div><label class="field-label">Payment Status</label><select class="field-input" id="f-pay-f" style="cursor:pointer"><option>Paid</option><option>Pending</option><option>Partial</option></select></div>
       <div><label class="field-label">Order Status</label><select class="field-input" id="f-ord-f" style="cursor:pointer"><option>Completed</option><option>Delivered</option><option>Cancelled</option></select></div>
+      <div class="modal-full" id="f-batch-wrap">
+        <label class="field-label">Source Batch <span style="color:var(--text3);font-size:9px;letter-spacing:.5px">— which stock batch is this sold from?</span></label>
+        <select class="field-input" id="f-batchref" style="cursor:pointer" onchange="onSaleBatchChange()">
+          <option value="">&#x26A1; FIFO Auto (oldest stock first)</option>
+        </select>
+      </div>
       <div class="modal-full"><label class="field-label">Notes</label><textarea class="field-input" id="f-notes" rows="2" style="resize:vertical"></textarea></div>
     </div>
     <div class="profit-preview" id="profit-preview" style="display:none">
@@ -594,14 +600,15 @@ tr:hover .row-actions{opacity:1}
           <option value="missing">Missing / Lost Stock</option>
         </select>
       </div>
-      <div><label class="field-label">Category</label><select class="field-input" id="cf-cat" style="cursor:pointer"></select></div>
+      <div><label class="field-label">Category</label><select class="field-input" id="cf-cat" style="cursor:pointer" onchange="onCostCatChange()"></select></div>
       <div><label class="field-label">Quantity (ordered)</label><input class="field-input" id="cf-qty" type="number" min="1" value="1" oninput="updateCostPreview()"></div>
       <div id="cf-total-wrap"><label class="field-label">Total Cost (৳) <span id="cf-cost-label" style="color:var(--text3);font-size:9px">(leave 0 if unknown)</span></label><input class="field-input" id="cf-total" type="number" min="0" placeholder="0" oninput="updateCostPreview()"></div>
       <div><label class="field-label">Date</label><input class="field-input" id="cf-date" type="date"></div>
       <!-- Purchase-only: missing + refund inline adjustment -->
       <div id="cf-box-missing-wrap" style="display:none"><label class="field-label">Missing from box <span style="color:var(--amber);font-size:9px">(items not received)</span></label><input class="field-input" id="cf-box-missing" type="number" min="0" placeholder="0" oninput="updateCostPreview()"></div>
       <div id="cf-refund-amt-wrap" style="display:none"><label class="field-label">Refund received (৳) <span style="color:var(--green);font-size:9px">(partial refund from seller)</span></label><input class="field-input" id="cf-refund-amt" type="number" min="0" placeholder="0" oninput="updateCostPreview()"></div>
-      <div class="modal-full"><label class="field-label">Notes</label><input class="field-input" id="cf-notes" placeholder="Batch number, supplier, etc."></div>
+      <div id="cf-batch-wrap"><label class="field-label">Batch # <span style="color:var(--text3);font-size:9px">(auto-suggested)</span></label><input class="field-input" id="cf-batch" type="number" min="1" placeholder="1"></div>
+      <div class="modal-full"><label class="field-label">Notes</label><input class="field-input" id="cf-notes" placeholder="Supplier, extra info, etc."></div>
     </div>
     <div class="profit-preview" id="cost-preview" style="display:none">
       <div style="display:flex;flex-direction:column;gap:3px;width:100%">
@@ -683,8 +690,8 @@ tr:hover .row-actions{opacity:1}
 const DEFAULT_CATS = ['Rings','Claw','Bangle','Mirror','Hairpin','Gift','Other'];
 const CAT_COLORS = {Rings:'#c9a853',Claw:'#a78bfa','Fish Claw':'#2dd4bf','Goth Claw':'#f472b6','Mini Claw':'#818cf8',Bangle:'#4ade80',Mirror:'#60a5fa',Hairpin:'#fb923c',Pin:'#facc15',Gift:'#f87171',Other:'#6b7280'};
 let CATS = JSON.parse(localStorage.getItem('bms_cats') || JSON.stringify(DEFAULT_CATS));
-const SALE_HEADERS  = ['id','item','cat','customer','qty','rev','cost','date','pay','due','ord','disc','notes'];
-const COST_HEADERS  = ['id','item','cat','qty','totalCost','date','notes','type','missingFromBox','refundReceived'];
+const SALE_HEADERS  = ['id','item','cat','customer','qty','rev','cost','date','pay','due','ord','disc','notes','batchRef'];
+const COST_HEADERS  = ['id','item','cat','qty','totalCost','date','notes','type','missingFromBox','refundReceived','batchNum'];
 const SALES_TAB = 'Sales';
 const COSTS_TAB = 'Costs';
 const BASE = 'https://sheets.googleapis.com/v4/spreadsheets';
@@ -696,6 +703,16 @@ const $    = id => document.getElementById(id);
 const today= () => new Date().toISOString().slice(0,10);
 const escH = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
+// ══════════════════════════════════════════════════════════
+// BATCH BADGE HELPER
+// ══════════════════════════════════════════════════════════
+function renderBatchBadge(batchId){
+  if(!batchId)return'';
+  const b=costsData.find(c=>c.id===batchId);
+  if(!b)return'';
+  const label=b.batchNum?('B'+b.batchNum):(b.notes?b.notes.slice(0,8):'?');
+  return `<span style="display:inline-flex;margin-left:6px;padding:1px 6px;border-radius:4px;font-size:9px;font-weight:700;background:var(--blue-dim);color:var(--blue);border:1px solid rgba(96,165,250,.2);letter-spacing:.5px;font-family:'DM Mono',monospace;vertical-align:middle">${escH(label)}</span>`;
+}
 // ══════════════════════════════════════════════════════════
 // STATE
 // ══════════════════════════════════════════════════════════
@@ -878,14 +895,14 @@ async function fetchSales(){
   const d=await sheetsReq(`/values/${SALES_TAB}`);
   const rows=d.values||[];
   if(rows.length<=1){sales=SAMPLE_SALES;await bulkWriteSales();return;}
-  sales=rows.slice(1).map((r,i)=>({_row:i+2,id:r[0]||uid(),item:r[1]||'',cat:r[2]||'Rings',customer:r[3]||'',qty:+r[4]||1,rev:+r[5]||0,cost:+r[6]||0,date:r[7]||'',pay:r[8]||'Paid',due:+r[9]||0,ord:r[10]||'Completed',disc:+r[11]||0,notes:r[12]||''}));
+  sales=rows.slice(1).map((r,i)=>({_row:i+2,id:r[0]||uid(),item:r[1]||'',cat:r[2]||'Rings',customer:r[3]||'',qty:+r[4]||1,rev:+r[5]||0,cost:+r[6]||0,date:r[7]||'',pay:r[8]||'Paid',due:+r[9]||0,ord:r[10]||'Completed',disc:+r[11]||0,notes:r[12]||'',batchRef:r[13]||''}));
 }
 
 async function fetchCosts(){
   const d=await sheetsReq(`/values/${COSTS_TAB}`).catch(()=>({values:[]}));
   const rows=d.values||[];
   if(rows.length<=1){costsData=SAMPLE_COSTS;await bulkWriteCosts();return;}
-  costsData=rows.slice(1).map((r,i)=>({_row:i+2,id:r[0]||uid(),item:r[1]||'',cat:r[2]||'Other',qty:+r[3]||1,totalCost:+r[4]||0,date:r[5]||'',notes:r[6]||'',type:r[7]||'purchase',missingFromBox:+r[8]||0,refundReceived:+r[9]||0}));
+  costsData=rows.slice(1).map((r,i)=>({_row:i+2,id:r[0]||uid(),item:r[1]||'',cat:r[2]||'Other',qty:+r[3]||1,totalCost:+r[4]||0,date:r[5]||'',notes:r[6]||'',type:r[7]||'purchase',missingFromBox:+r[8]||0,refundReceived:+r[9]||0,batchNum:+r[10]||0}));
 }
 
 async function refreshData(){showSync(true);try{await Promise.all([fetchSales(),fetchCosts()]);renderCurrentPage();toast('Refreshed','success');}catch(e){toast('Refresh failed: '+e.message,'error');}showSync(false);}
@@ -1074,7 +1091,7 @@ function renderSales(){
     const p=profit(s);
     return `<tr style="animation:fadeUp .15s ${i*.025}s both;cursor:context-menu" oncontextmenu="showCtxMenu(event,'sale','${s.id}',${s._row||0})">
       <td class="sl-cell">${i+1}</td>
-      <td style="font-weight:500;white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis">${escH(s.item)}</td>
+      <td style="font-weight:500;white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis">${escH(s.item)}${s.batchRef?renderBatchBadge(s.batchRef):''}</td>
       <td><span class="cell-cat" style="color:${CAT_COLORS[s.cat]||'var(--text2)'}">${escH(s.cat)}</span></td>
       <td style="color:${s.customer?'var(--text)':'var(--text3)'}">${escH(s.customer)||'—'}</td>
       <td class="num-cell" style="text-align:center;color:var(--text2)">${s.qty}</td>
@@ -1107,13 +1124,44 @@ function clearFilters(){['f-cat','f-pay','f-from','f-to','f-minr','f-maxr'].forE
 // ══════════════════════════════════════════════════════════
 // ADD / EDIT SALE
 // ══════════════════════════════════════════════════════════
-function openAddSale(){editId=null;$('modal-title').textContent='Add New Sale';$('btn-save-sale').textContent='Save Sale';setSaleForm({});openModal('m-sale');}
+function openAddSale(){editId=null;$('modal-title').textContent='Add New Sale';$('btn-save-sale').textContent='Save Sale';setSaleForm({cat:'Rings'});setTimeout(autoFillSaleCost,0);openModal('m-sale');}
 function openEditSale(id){const s=sales.find(x=>x.id===id);if(!s)return;editId=id;$('modal-title').textContent='Edit Sale';$('btn-save-sale').textContent='Save Changes';setSaleForm(s);openModal('m-sale');}
 function setSaleForm(s){
   $('f-item').value=s.item||'';$('f-catf').value=s.cat||'Rings';$('f-cust').value=s.customer||'';
   $('f-qty').value=s.qty||1;$('f-date').value=s.date||today();$('f-rev').value=s.rev||'';
   $('f-cost').value=s.cost||'';$('f-due').value=s.due||'';$('f-disc').value=s.disc||'';
   $('f-pay-f').value=s.pay||'Paid';$('f-ord-f').value=s.ord||'Completed';$('f-notes').value=s.notes||'';
+  const hint=$('f-cost-hint');if(hint)hint.textContent=editId?'manual':'';
+  populateSaleBatchDropdown(s.cat||'Rings', s.batchRef||'');
+  updateProfitPreview();
+}
+// Populate the batch selector for the chosen category
+function populateSaleBatchDropdown(cat, selectedBatchRef=''){
+  const sel=$('f-batchref');if(!sel)return;
+  const {batches}=getFIFOBatches(cat||'');
+  const available=batches.filter(b=>b.remainingQty>0||(selectedBatchRef&&b.id===selectedBatchRef));
+  sel.innerHTML=`<option value="">&#x26A1; FIFO Auto (oldest stock first)</option>`
+    + available.map(b=>{
+      const label=b.batchNum?`Batch ${b.batchNum}`:(b.notes||b.item||'Unknown batch');
+      return `<option value="${b.id}">${label} — ${b.remainingQty} left @ ${fmt(b.costPerUnit)}/unit · ${b.date}</option>`;
+    }).join('');
+  sel.value=selectedBatchRef||'';
+  const wrap=$('f-batch-wrap');
+  if(wrap) wrap.style.display=(cat&&cat!=='Other')&&available.length?'':'none';
+}
+// When user manually picks a batch → override cost
+function onSaleBatchChange(){
+  const batchId=$('f-batchref')?.value;
+  if(!batchId){autoFillSaleCost();return;}
+  const batch=costsData.find(c=>c.id===batchId);
+  if(!batch)return;
+  const qty=+$('f-qty')?.value||1;
+  const effQty=Math.max(1,(+batch.qty||1)-(+batch.missingFromBox||0));
+  const effCost=Math.max(0,(+batch.totalCost||0)-(+batch.refundReceived||0));
+  const cpu=effQty?Math.round(effCost/effQty):0;
+  $('f-cost').value=cpu*qty;
+  const hint=$('f-cost-hint');
+  if(hint){const bn=batch.batchNum?('Batch '+batch.batchNum):(batch.notes||'');hint.textContent='Manual batch'+(bn?' · '+bn:'');}
   updateProfitPreview();
 }
 function updateProfitPreview(){
@@ -1122,9 +1170,45 @@ function updateProfitPreview(){
   if(r||c){pr.style.display='flex';const p=r-c;v.textContent=fmt(p)+(r?` (${pct(p,r)} margin)`:'');v.style.color=p>=0?'var(--green)':'var(--red)';}
   else pr.style.display='none';
 }
+// FIFO: calculate cost of selling next qty units from a category
+function getFIFOCostForSale(cat,qty){
+  if(!cat||cat==='Other')return{total:0,cpu:0,batch:null};
+  const {batches}=getFIFOBatches(cat);
+  let remaining=qty;let totalCost=0;let firstBatch=null;
+  for(const b of batches){
+    if(b.remainingQty<=0)continue;
+    if(!firstBatch)firstBatch=b;
+    const take=Math.min(remaining,b.remainingQty);
+    totalCost+=take*b.costPerUnit;
+    remaining-=take;
+    if(remaining<=0)break;
+  }
+  const cpu=qty?Math.round(totalCost/qty):0;
+  return{total:totalCost,cpu,batch:firstBatch};
+}
+function autoFillSaleCost(){
+  const cat=$('f-catf')?.value;
+  const qty=+$('f-qty')?.value||1;
+  // Repopulate batch dropdown whenever category or qty changes
+  populateSaleBatchDropdown(cat, $('f-batchref')?.value||'');
+  const batchId=$('f-batchref')?.value;
+  // If user picked a specific batch, respect it
+  if(batchId){onSaleBatchChange();return;}
+  // Only auto-fill on new sales, not edits (don't clobber manually set costs)
+  if(editId)return;
+  const {total,cpu,batch}=getFIFOCostForSale(cat,qty);
+  const hint=$('f-cost-hint');
+  if(cpu>0){
+    $('f-cost').value=total;
+    if(hint){const batchLabel=batch?.batchNum?('Batch '+batch.batchNum):(batch?.notes||'');hint.textContent='FIFO auto'+(batchLabel?' · '+batchLabel:'');}
+  }else{
+    if(hint)hint.textContent=cat&&cat!=='Other'?'no stock data':'';
+  }
+  updateProfitPreview();
+}
 async function saveSale(){
   const item=$('f-item').value.trim();if(!item){toast('Item name required','error');return;}
-  const entry={id:editId||uid(),item,cat:$('f-catf').value,customer:$('f-cust').value.trim(),qty:+$('f-qty').value||1,date:$('f-date').value,rev:+$('f-rev').value||0,cost:+$('f-cost').value||0,due:+$('f-due').value||0,disc:+$('f-disc').value||0,pay:$('f-pay-f').value,ord:$('f-ord-f').value,notes:$('f-notes').value.trim()};
+  const entry={id:editId||uid(),item,cat:$('f-catf').value,customer:$('f-cust').value.trim(),qty:+$('f-qty').value||1,date:$('f-date').value,rev:+$('f-rev').value||0,cost:+$('f-cost').value||0,due:+$('f-due').value||0,disc:+$('f-disc').value||0,pay:$('f-pay-f').value,ord:$('f-ord-f').value,notes:$('f-notes').value.trim(),batchRef:$('f-batchref')?.value||''};
   const btn=$('btn-save-sale');btn.disabled=true;showSync(true);closeModal('m-sale');
   try{
     if(editId){const ex=sales.find(s=>s.id===editId);entry._row=ex._row;await updateRow(SALES_TAB,entry._row,SALE_HEADERS,entry);const i=sales.findIndex(s=>s.id===editId);sales[i]=entry;toast('Sale updated ✦','success');}
@@ -1139,7 +1223,29 @@ async function saveSale(){
 // ══════════════════════════════════════════════════════════
 function openAddCost(){editCostId=null;$('cost-modal-title').textContent='Add Shipment';$('btn-save-cost').textContent='Save Shipment';setCostForm({});openModal('m-cost');}
 function openEditCost(id){const c=costsData.find(x=>x.id===id);if(!c)return;editCostId=id;$('cost-modal-title').textContent='Edit Shipment';setCostForm(c);openModal('m-cost');}
-function setCostForm(c){$('cf-item').value=c.item||'';$('cf-cat').value=c.cat||CATS[0]||'Rings';$('cf-qty').value=c.qty||1;$('cf-total').value=c.totalCost||'';$('cf-date').value=c.date||today();$('cf-notes').value=c.notes||'';$('cf-type').value=c.type||'purchase';$('cf-box-missing').value=c.missingFromBox||0;$('cf-refund-amt').value=c.refundReceived||0;updateCostPreview();}
+function getNextBatchNum(cat){
+  const existing=costsData.filter(c=>c.cat===cat&&(c.type||'purchase')==='purchase'&&c.batchNum>0).map(c=>+c.batchNum);
+  return existing.length?Math.max(...existing)+1:1;
+}
+function setCostForm(c){
+  $('cf-item').value=c.item||'';
+  $('cf-cat').value=c.cat||CATS[0]||'Rings';
+  $('cf-qty').value=c.qty||1;
+  $('cf-total').value=c.totalCost||'';
+  $('cf-date').value=c.date||today();
+  $('cf-notes').value=c.notes||'';
+  $('cf-type').value=c.type||'purchase';
+  $('cf-box-missing').value=c.missingFromBox||0;
+  $('cf-refund-amt').value=c.refundReceived||0;
+  // Batch num: if editing use existing, if new auto-suggest
+  $('cf-batch').value=c.batchNum||(editCostId?'':getNextBatchNum(c.cat||CATS[0]||'Rings'));
+  updateCostPreview();
+}
+// Re-suggest batch number when category changes on add
+function onCostCatChange(){
+  if(!editCostId){$('cf-batch').value=getNextBatchNum($('cf-cat').value);}
+  updateCostPreview();
+}
 function updateCostPreview(){
   const type=$('cf-type')?.value||'purchase';
   const isPurchase=type==='purchase';
@@ -1202,7 +1308,8 @@ function updateCostPreview(){
 async function saveCost(){
   const item=$('cf-item').value.trim();if(!item){toast('Item name required','error');return;}
   const type=$('cf-type').value||'purchase';
-  const entry={id:editCostId||uid(),item,cat:$('cf-cat').value,qty:+$('cf-qty').value||1,totalCost:type==='missing'?0:(+$('cf-total').value||0),date:$('cf-date').value,notes:$('cf-notes').value.trim(),type,missingFromBox:type==='purchase'?(+$('cf-box-missing').value||0):0,refundReceived:type==='purchase'?(+$('cf-refund-amt').value||0):0};
+  const batchNum=+$('cf-batch').value||0;
+  const entry={id:editCostId||uid(),item,cat:$('cf-cat').value,qty:+$('cf-qty').value||1,totalCost:type==='missing'?0:(+$('cf-total').value||0),date:$('cf-date').value,notes:$('cf-notes').value.trim(),type,missingFromBox:type==='purchase'?(+$('cf-box-missing').value||0):0,refundReceived:type==='purchase'?(+$('cf-refund-amt').value||0):0,batchNum};
   const btn=$('btn-save-cost');btn.disabled=true;showSync(true);closeModal('m-cost');
   try{
     if(editCostId){const ex=costsData.find(c=>c.id===editCostId);entry._row=ex._row;await updateRow(COSTS_TAB,entry._row,COST_HEADERS,entry);const i=costsData.findIndex(c=>c.id===editCostId);costsData[i]=entry;toast('Shipment updated','success');}
@@ -1335,11 +1442,12 @@ function openInvDetail(cat){
   $('inv-detail-title').innerHTML=`<span style="color:${col}">●</span> ${escH(cat)} — Batch Breakdown`;
   const rows=batches.map((b,i)=>{
     const rem=b.remainingQty;const remCol=rem<=0?'var(--red)':rem<=2?'var(--amber)':'var(--green)';
+    const batchLabel=b.batchNum?`<span style="background:var(--blue-dim);color:var(--blue);border:1px solid rgba(96,165,250,.2);border-radius:4px;padding:1px 7px;font-size:9px;font-weight:700;margin-right:6px">B${b.batchNum}</span>`:'';
     const adjustTag=b.hasAdjust?`<div style="font-size:9px;color:var(--amber);margin-top:2px">\u25b2 ${b.originalQty} ordered · ${b.originalQty-b.effQty} missing${b.refundReceived?` · ${fmt(b.refundReceived)} refunded`:''}</div>`:'';
     const cpuCell=b.hasAdjust?`<div style="color:var(--blue);font-weight:600">${fmt(b.costPerUnit)}</div><div style="font-size:9px;color:var(--text3);text-decoration:line-through">${fmt(b.origCpu)}</div>`:`<span style="color:var(--blue)">${fmt(b.costPerUnit)}</span>`;
     return`<tr style="animation:fadeUp .1s ${i*.04}s both">
       <td class="sl-cell">${i+1}</td>
-      <td style="font-weight:500;font-size:12px">${escH(b.item)}${adjustTag}</td>
+      <td style="font-weight:500;font-size:12px">${batchLabel}${escH(b.item)}${adjustTag}</td>
       <td class="num-cell" style="color:var(--text2);font-size:11px">${b.date}</td>
       <td class="num-cell" style="text-align:center;color:var(--text2)">${b.effQty}${b.hasAdjust?`<span style="color:var(--text3);font-size:9px;display:block">of ${b.originalQty}</span>`:''}</td>
       <td class="num-cell" style="text-align:center;color:var(--text3)">${b.usedQty}</td>
@@ -1507,10 +1615,11 @@ function renderStockCost(){
       const cpuCell=b.hasAdjust
         ?`<div style="color:var(--blue)">${fmt(b.costPerUnit)}</div><div style="font-size:10px;color:var(--text3);text-decoration:line-through">${fmt(b.origCpu)}</div>`
         :`<span style="color:var(--blue)">${fmt(b.costPerUnit)}</span>`;
+      const batchLabel=b.batchNum?`<span style="background:var(--blue-dim);color:var(--blue);border:1px solid rgba(96,165,250,.2);border-radius:4px;padding:1px 7px;font-size:9px;font-weight:700;margin-right:5px">B${b.batchNum}</span>`:'';
       rows+=`<tr style="animation:fadeUp .1s ${globalIdx*.03}s both;cursor:pointer" onclick="openInvDetail('${cat}')">
         <td class="sl-cell">${globalIdx}</td>
         <td><span style="background:${col}22;color:${col};border:1px solid ${col}44;border-radius:5px;padding:2px 9px;font-size:11px;font-weight:600">${escH(cat)}</span></td>
-        <td style="font-weight:500;font-size:12px">${escH(b.item)}${adjustTag}</td>
+        <td style="font-weight:500;font-size:12px">${batchLabel}${escH(b.item)}${adjustTag}</td>
         <td style="color:var(--text2);font-size:11px">${b.date}</td>
         <td class="num-cell" style="color:var(--green);font-weight:700;text-align:center">${b.remainingQty}</td>
         <td class="num-cell">${cpuCell}</td>
